@@ -10,11 +10,16 @@ interpolate() {
     local -r GITBUCKET_RELEASE=$(wget -q --max-redirect=1 -S -O - https://github.com/takezoe/gitbucket/releases/latest 2>&1 | grep -e 'Location: ' | grep -o "http.*" | grep "tag")
     local -r GITBUCKET_VERSION=$(echo ${GITBUCKET_RELEASE} | sed -e "s/^http.*\/tag\///")
 
-    if [ ! -f $CURRENT_DIR/CURRENT_VERSION ];then
+    if [ ! -f $CURRENT_DIR/CURRENT_VERSION ]; then
         echo ${GITBUCKET_VERSION} > $CURRENT_DIR/CURRENT_VERSION
     fi
-    grep  "${GITBUCKET_VERSION}" $CURRENT_DIR/CURRENT_VERSION
-    local -r check=$([ $? -ne 0 ] && echo "#[fg=red]gitbucket UPDATED")
+    grep -q "${GITBUCKET_VERSION}" $CURRENT_DIR/CURRENT_VERSION
+    local result=$?
+    local check=''
+    if [ $result -ne 0 ]; then
+        check="#[fg=red]gitbucket UPDATED"
+        echo ${GITBUCKET_VERSION} > $CURRENT_DIR/CURRENT_VERSION
+    fi
     local -r status_value=$(tmux show-option -gqv "$status")
     tmux set-option -gq "$status" "${status_value/$place_holder/$check}"
 }
